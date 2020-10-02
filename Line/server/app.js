@@ -103,7 +103,7 @@ function getFirebaseUser(lineMid, lineAccessToken) {
  */
 function verifyLineToken(lineAccessToken) {
   // Send request to LINE server for access token verification
-  const verifyTokenOptions = generateLineApiRequestForVerify('https://api.line.me/v1/oauth/verify', lineAccessToken); //'https://api.line.me/oauth2/v2.1/verify', lineAccessToken);
+  const verifyTokenOptions = generateLineApiRequestForVerify('https://api.line.me/oauth2/v2.1/verify', lineAccessToken);
   var firebaseUid = '';
 
   // STEP 1: Verify with LINE server that a LINE access token is valid
