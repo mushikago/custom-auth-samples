@@ -41,6 +41,14 @@ function generateLineApiRequest(apiEndpoint, lineAccessToken) {
   };
 }
 
+// Generate a Request option to access LINE APIs
+function generateLineApiRequestForVerify(uri, lineAccessToken) {
+  return {
+    uri: uri + lineAccessToken,
+    json: true
+  };
+}
+
 /**
  * Look up Firebase user based on LINE's mid. If the Firebase user does not exist,
  + fetch LINE profile and create a new Firebase user with it.
@@ -90,11 +98,11 @@ function getFirebaseUser(lineMid, lineAccessToken) {
  */
 function verifyLineToken(lineAccessToken) {
   // Send request to LINE server for access token verification
-  // const verifyTokenOptions = generateLineApiRequest('https://api.line.me/v1/oauth/verify', lineAccessToken);
+  const verifyTokenOptions = generateLineApiRequestForVerify('https://api.line.me/oauth2/v2.1/verify?access_token=', lineAccessToken);
   var firebaseUid = '';
 
   // STEP 1: Verify with LINE server that a LINE access token is valid
-  return rp('https://api.line.me/oauth2/v2.1/verify?access_token=' + lineAccessToken)
+  return rp(verifyTokenOptions)
     .then(response => {
       // Verify the token’s channelId match with my channelId to prevent spoof attack
       // <IMPORTANT> As LINE's Get user profiles API response doesn't include channelID,
@@ -103,6 +111,8 @@ function verifyLineToken(lineAccessToken) {
       //TODO: consider !== here
       // if (response.channelId != config.line.channelId)
       //   return Promise.reject(new Error('LINE channel ID mismatched'));
+
+      console.log(response.channel_id);
 
       // STEP 2: Access token validation succeeded, so look up the corresponding Firebase user
       const lineMid = lineAccessToken.split('.')[0]; //response.mid;
