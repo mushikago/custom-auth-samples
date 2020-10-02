@@ -44,8 +44,14 @@ function generateLineApiRequest(apiEndpoint, lineAccessToken) {
 // Generate a Request option to access LINE APIs
 function generateLineApiRequestForVerify(uri, lineAccessToken) {
   return {
-    uri: uri + lineAccessToken,
-    json: true
+      uri: uri,
+      qs: {
+          access_token: lineAccessToken // -> uri + '?access_token=xxxxx%20xxxxx'
+      },
+      headers: {
+          'User-Agent': 'Request-Promise'
+      },
+      json: true // Automatically parses the JSON string in the response
   };
 }
 
@@ -61,7 +67,6 @@ function getFirebaseUser(lineMid, lineAccessToken) {
 
   // LINE's get user profile API endpoint
   const getProfileOptions = generateLineApiRequest('https://api.line.me/v2/profile', lineAccessToken);
-
   return admin.auth().getUser(firebaseUid).catch(error => {
     // If user does not exist, fetch LINE profile and create a Firebase new user with it
     if (error.code === 'auth/user-not-found') {
@@ -98,7 +103,7 @@ function getFirebaseUser(lineMid, lineAccessToken) {
  */
 function verifyLineToken(lineAccessToken) {
   // Send request to LINE server for access token verification
-  const verifyTokenOptions = generateLineApiRequestForVerify('https://api.line.me/oauth2/v2.1/verify?access_token=', lineAccessToken);
+  const verifyTokenOptions = generateLineApiRequestForVerify('https://api.line.me/v1/oauth/verify', lineAccessToken); //'https://api.line.me/oauth2/v2.1/verify', lineAccessToken);
   var firebaseUid = '';
 
   // STEP 1: Verify with LINE server that a LINE access token is valid
@@ -109,11 +114,10 @@ function verifyLineToken(lineAccessToken) {
       // you must not skip this step to make sure that the LINE access token is indeed
       // issued for your channel.
       //TODO: consider !== here
-      // if (response.channelId != config.line.channelId)
-      //   return Promise.reject(new Error('LINE channel ID mismatched'));
-
-      console.log(response.channel_id);
-
+      console.log(response);
+      if (response.client_id != config.line.channelId)
+        return Promise.reject(new Error('LINE channel ID mismatched'));
+      
       // STEP 2: Access token validation succeeded, so look up the corresponding Firebase user
       const lineMid = lineAccessToken.split('.')[0]; //response.mid;
       return getFirebaseUser(lineMid, lineAccessToken);
