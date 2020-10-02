@@ -62,31 +62,45 @@ function generateLineApiRequestForVerify(uri, lineAccessToken) {
  * @returns {Promise<UserRecord>} The Firebase user record in a promise.
  */
 function getFirebaseUser(lineMid, lineAccessToken) {
-  // Generate Firebase user's uid based on LINE's mid
-  const firebaseUid = `line:${lineMid}`;
+  
 
   // LINE's get user profile API endpoint
   const getProfileOptions = generateLineApiRequest('https://api.line.me/v2/profile', lineAccessToken);
-  return admin.auth().getUser(firebaseUid).catch(error => {
+
+  return rp(getProfileOptions).then(response => {
+    // Parse user profile from LINE's get user profile API response
+    const displayName = response.displayName;
+    const photoURL = response.pictureUrl;
+
+    // Generate Firebase user's uid based on LINE's userid v2.1
+    const firebaseUid = `line:${response.userId}`;
+
+    return admin.auth().getUser(firebaseUid).catch(error => {
     // If user does not exist, fetch LINE profile and create a Firebase new user with it
-    if (error.code === 'auth/user-not-found') {
-      return rp(getProfileOptions).then(response => {
-        // Parse user profile from LINE's get user profile API response
-        const displayName = response.displayName;
-        const photoURL = response.pictureUrl;
-   
-        console.log('Create new Firebase user for LINE user mid = "', lineMid,'"');
+      if (error.code === 'auth/user-not-found') {
+
+        console.log('Create new Firebase user for LINE user id = "', response.userId,'"');
         // Create a new Firebase user with LINE profile and return it
         return admin.auth().createUser({
           uid: firebaseUid,
           displayName: displayName,
           photoURL: photoURL
         });
-      });
-    }
-    // If error other than auth/user-not-found occurred, fail the whole login process
-    throw error;
+
+      }
+      // If error other than auth/user-not-found occurred, fail the whole login process
+      throw error;
+    });
+
+  })
+  .catch(err => {
+    // If LINE access token verification failed, return error response to client
+    const ret = {
+      error_message: '### NEW ### Authentication error: Cannot get user id. ###'
+    };
+    return res.status(403).send(ret);
   });
+  
 }
 
 /**
