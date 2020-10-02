@@ -61,7 +61,7 @@ function generateLineApiRequestForVerify(uri, lineAccessToken) {
  *
  * @returns {Promise<UserRecord>} The Firebase user record in a promise.
  */
-function getFirebaseUser(lineMid, lineAccessToken) {
+function getFirebaseUser(lineAccessToken) {
   
 
   // LINE's get user profile API endpoint
@@ -133,8 +133,8 @@ function verifyLineToken(lineAccessToken) {
         return Promise.reject(new Error('LINE channel ID mismatched'));
       
       // STEP 2: Access token validation succeeded, so look up the corresponding Firebase user
-      const lineMid = lineAccessToken.split('.')[0]; //response.mid;
-      return getFirebaseUser(lineMid, lineAccessToken);
+      //const lineMid = lineAccessToken.split('.')[0]; //response.mid;
+      return getFirebaseUser(lineAccessToken);
     })
     .then(userRecord => {
       // STEP 3: Generate Firebase Custom Auth Token
